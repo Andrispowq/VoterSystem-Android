@@ -3,7 +3,9 @@ package com.akmeczo.votersystem
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -11,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
@@ -18,18 +21,25 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
+import com.akmeczo.votersystem.server.RequestType
+import com.akmeczo.votersystem.server.Server
+import com.akmeczo.votersystem.server.requests.UserLoginRequest
+import com.akmeczo.votersystem.server.responses.TokensDto
+import kotlinx.coroutines.launch
 
 @PreviewScreenSizes
 @Composable
-fun LoginScreen() {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+fun LoginScreen(server: Server = Server("", "")) {
+    var email by remember { mutableStateOf("example@gmail.com") }
+    var password by remember { mutableStateOf("test_Str0ng_password") }
     val isValidEmail = android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    val scope = rememberCoroutineScope()
 
     Column {
         Text(
             text = "Login",
-            style = MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(horizontal = 100.dp)
         )
 
         Spacer(modifier = Modifier.height(100.dp))
@@ -62,5 +72,18 @@ fun LoginScreen() {
                 imeAction = ImeAction.Done
             )
         )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Button(onClick = {
+            val request = UserLoginRequest(email, password)
+
+            scope.launch {
+                val response: TokensDto? = server.makeRequest("users/login", RequestType.POST, request)
+                println("Got $response")
+            }
+        }) {
+            Text("Login")
+        }
     }
 }

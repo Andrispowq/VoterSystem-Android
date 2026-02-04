@@ -10,24 +10,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import com.akmeczo.votersystem.server.Server
 
 class MainActivity : ComponentActivity() {
+    private val server: Server = Server("andris.picidolgok.hu", "api/v1")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            VoterSystemApp()
+            VoterSystemApp(server)
         }
     }
 }
 
 @PreviewScreenSizes
 @Composable
-fun VoterSystemApp() {
+fun VoterSystemApp(server: Server = Server("", "")) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        LoginScreen()
+        LoginScreen(server)
     }
 }
