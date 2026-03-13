@@ -10,8 +10,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
-import com.akmeczo.votersystem.server.Server
+import com.akmeczo.votersystem.ui.AppScreen
 import com.akmeczo.votersystem.ui.LoginScreen
+import com.akmeczo.votersystem.ui.MainScreen
+import com.akmeczo.votersystem.ui.rememberAppNavigator
+import com.akmeczo.votersystem.server.Server
 
 class MainActivity : ComponentActivity() {
     private val server: Server = Server("andris.picidolgok.hu", "api/v1")
@@ -28,10 +31,21 @@ class MainActivity : ComponentActivity() {
 @PreviewScreenSizes
 @Composable
 fun VoterSystemApp(server: Server = Server("", "")) {
+    val navigator = rememberAppNavigator()
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        LoginScreen(server)
+        when (navigator.currentScreen) {
+            AppScreen.Login -> LoginScreen(
+                server = server,
+                navigator = navigator
+            )
+            AppScreen.Main -> MainScreen(
+                server = server,
+                navigator = navigator
+            )
+        }
     }
 }

@@ -25,11 +25,15 @@ import androidx.compose.ui.unit.dp
 import com.akmeczo.votersystem.server.Api
 import com.akmeczo.votersystem.server.Server
 import com.akmeczo.votersystem.server.requests.UserLoginRequest
+import com.akmeczo.votersystem.server.responses.LoginResultDto
 import kotlinx.coroutines.launch
 
 @PreviewScreenSizes
 @Composable
-fun LoginScreen(server: Server = Server("", "")) {
+fun LoginScreen(
+    server: Server = Server("", ""),
+    navigator: AppNavigator = AppNavigator(initialScreen = AppScreen.Login)
+) {
     var email by remember { mutableStateOf("example@gmail.com") }
     var password by remember { mutableStateOf("test_Str0ng_password") }
     val isValidEmail = EMAIL_ADDRESS.matcher(email).matches()
@@ -81,6 +85,10 @@ fun LoginScreen(server: Server = Server("", "")) {
             scope.launch {
                 val response = Api.Users.login(server, request)
                 println("Got $response")
+
+                if (response is LoginResultDto.Tokens) {
+                    navigator.navigateTo(AppScreen.Main)
+                }
             }
         }) {
             Text("Login")
