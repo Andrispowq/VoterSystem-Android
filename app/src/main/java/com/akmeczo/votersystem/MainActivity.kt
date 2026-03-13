@@ -11,8 +11,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.akmeczo.votersystem.ui.AppScreen
+import com.akmeczo.votersystem.ui.AuthLandingScreen
 import com.akmeczo.votersystem.ui.LoginScreen
-import com.akmeczo.votersystem.ui.MainScreen
+import com.akmeczo.votersystem.ui.RegisterScreen
+import com.akmeczo.votersystem.ui.VotingDetailScreen
+import com.akmeczo.votersystem.ui.VotingHistoryScreen
+import com.akmeczo.votersystem.ui.VotingListScreen
 import com.akmeczo.votersystem.ui.rememberAppNavigator
 import com.akmeczo.votersystem.server.Server
 
@@ -37,15 +41,17 @@ fun VoterSystemApp(server: Server = Server("", "")) {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        when (navigator.currentScreen) {
-            AppScreen.Login -> LoginScreen(
+        when (val screen = navigator.currentScreen) {
+            AppScreen.AuthLanding -> AuthLandingScreen(server = server, navigator = navigator)
+            AppScreen.LoginForm -> LoginScreen(server = server, navigator = navigator)
+            AppScreen.RegisterForm -> RegisterScreen(server = server, navigator = navigator)
+            AppScreen.VotingList -> VotingListScreen(server = server, navigator = navigator)
+            is AppScreen.VotingDetail -> VotingDetailScreen(
+                votingId = screen.votingId,
                 server = server,
                 navigator = navigator
             )
-            AppScreen.Main -> MainScreen(
-                server = server,
-                navigator = navigator
-            )
+            AppScreen.VotingHistory -> VotingHistoryScreen(server = server, navigator = navigator)
         }
     }
 }

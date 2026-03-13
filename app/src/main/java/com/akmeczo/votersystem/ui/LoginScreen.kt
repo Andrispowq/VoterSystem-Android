@@ -1,97 +1,163 @@
 package com.akmeczo.votersystem.ui
 
 import android.util.Patterns.EMAIL_ADDRESS
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
-import com.akmeczo.votersystem.server.Api
 import com.akmeczo.votersystem.server.Server
-import com.akmeczo.votersystem.server.requests.UserLoginRequest
-import com.akmeczo.votersystem.server.responses.LoginResultDto
-import kotlinx.coroutines.launch
+
+@PreviewScreenSizes
+@Composable
+fun AuthLandingScreen(
+    server: Server = Server("", ""),
+    navigator: AppNavigator = AppNavigator(AppScreen.AuthLanding)
+) {
+    AuthScreenLayout {
+        Spacer(modifier = Modifier.height(UiTokens.screenVerticalPadding))
+        AppTitleText()
+        Spacer(modifier = Modifier.height(UiTokens.heroGap))
+        RoundedActionButton(
+            text = "Login",
+            onClick = { navigator.navigateTo(AppScreen.LoginForm) }
+        )
+        Spacer(modifier = Modifier.height(UiTokens.sectionGap))
+        RoundedActionButton(
+            text = "Register",
+            onClick = { navigator.navigateTo(AppScreen.RegisterForm) }
+        )
+        Spacer(modifier = Modifier.height(28.dp))
+        RoundedActionButton(
+            text = "Log in with Google",
+            onClick = { navigator.navigateTo(AppScreen.VotingList) }
+        )
+        Spacer(modifier = Modifier.height(UiTokens.sectionGap))
+        RoundedActionButton(
+            text = "Log in with Neptun",
+            onClick = { navigator.navigateTo(AppScreen.VotingList) }
+        )
+    }
+}
 
 @PreviewScreenSizes
 @Composable
 fun LoginScreen(
     server: Server = Server("", ""),
-    navigator: AppNavigator = AppNavigator(initialScreen = AppScreen.Login)
+    navigator: AppNavigator = AppNavigator(AppScreen.LoginForm)
 ) {
     var email by remember { mutableStateOf("example@gmail.com") }
     var password by remember { mutableStateOf("test_Str0ng_password") }
     val isValidEmail = EMAIL_ADDRESS.matcher(email).matches()
-    val scope = rememberCoroutineScope()
 
-    Column {
-        Text(
-            text = "Login",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(horizontal = 100.dp)
-        )
-
-        Spacer(modifier = Modifier.height(100.dp))
-
-        OutlinedTextField(
+    AuthScreenLayout {
+        Spacer(modifier = Modifier.height(UiTokens.screenVerticalPadding))
+        AppTitleText()
+        Spacer(modifier = Modifier.height(UiTokens.heroGap))
+        RoundedTextField(
             value = email,
             onValueChange = { email = it.trim() },
-            isError = email.isNotEmpty() && !isValidEmail,
-            placeholder = { Text("Email") },
-            supportingText = {
-                if (email.isNotEmpty() && !isValidEmail) Text("Enter a valid email address")
-            },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
-            )
+            placeholder = "Email",
+            isError = email.isNotEmpty() && !isValidEmail
         )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        OutlinedTextField(
+        Spacer(modifier = Modifier.height(UiTokens.sectionGap))
+        RoundedPasswordField(
             value = password,
             onValueChange = { password = it },
-            placeholder = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done
-            )
+            placeholder = "Password"
         )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Button(onClick = {
-            val request = UserLoginRequest(email, password)
-
-            scope.launch {
-                val response = Api.Users.login(server, request)
-                println("Got $response")
-
-                if (response is LoginResultDto.Tokens) {
-                    navigator.navigateTo(AppScreen.Main)
+        Spacer(modifier = Modifier.height(UiTokens.largeGap))
+        RoundedActionButton(
+            text = "Login",
+            onClick = {
+                if (email.isNotBlank() && password.isNotBlank() && isValidEmail) {
+                    navigator.navigateTo(AppScreen.VotingList)
                 }
             }
-        }) {
-            Text("Login")
-        }
+        )
+        Spacer(modifier = Modifier.height(UiTokens.sectionGap))
+        RoundedActionButton(
+            text = "Back",
+            onClick = {
+                navigator.navigateTo(AppScreen.AuthLanding)
+            }
+        )
     }
+}
+
+@PreviewScreenSizes
+@Composable
+fun RegisterScreen(
+    server: Server = Server("", ""),
+    navigator: AppNavigator = AppNavigator(AppScreen.RegisterForm)
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordAgain by remember { mutableStateOf("") }
+
+    AuthScreenLayout {
+        Spacer(modifier = Modifier.height(UiTokens.screenVerticalPadding))
+        AppTitleText()
+        Spacer(modifier = Modifier.height(UiTokens.titleToFormGap))
+        RoundedTextField(
+            value = email,
+            onValueChange = { email = it.trim() },
+            placeholder = "Email"
+        )
+        Spacer(modifier = Modifier.height(UiTokens.sectionGap))
+        RoundedPasswordField(
+            value = password,
+            onValueChange = { password = it },
+            placeholder = "Password"
+        )
+        Spacer(modifier = Modifier.height(UiTokens.sectionGap))
+        RoundedPasswordField(
+            value = passwordAgain,
+            onValueChange = { passwordAgain = it },
+            placeholder = "Password again"
+        )
+        Spacer(modifier = Modifier.height(UiTokens.largeGap))
+        RoundedActionButton(
+            text = "Register",
+            onClick = {
+                if (email.isNotBlank() && password.isNotBlank() && password == passwordAgain) {
+                    navigator.navigateTo(AppScreen.LoginForm)
+                }
+            }
+        )
+        Spacer(modifier = Modifier.height(UiTokens.sectionGap))
+        RoundedActionButton(
+            text = "Back",
+            onClick = {
+                navigator.navigateTo(AppScreen.AuthLanding)
+            }
+        )
+    }
+}
+
+@Composable
+private fun AuthScreenLayout(content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .appBackground()
+            .padding(
+                horizontal = UiTokens.screenHorizontalPadding,
+                vertical = UiTokens.screenVerticalPadding
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top,
+        content = content
+    )
 }

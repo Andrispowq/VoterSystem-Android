@@ -6,9 +6,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
-enum class AppScreen {
-    Login,
-    Main
+sealed interface AppScreen {
+    data object AuthLanding : AppScreen
+    data object LoginForm : AppScreen
+    data object RegisterForm : AppScreen
+    data object VotingList : AppScreen
+    data class VotingDetail(val votingId: Long) : AppScreen
+    data object VotingHistory : AppScreen
 }
 
 class AppNavigator(initialScreen: AppScreen) {
@@ -21,7 +25,7 @@ class AppNavigator(initialScreen: AppScreen) {
 }
 
 @Composable
-fun rememberAppNavigator(initialScreen: AppScreen = AppScreen.Login): AppNavigator =
+fun rememberAppNavigator(initialScreen: AppScreen = AppScreen.AuthLanding): AppNavigator =
     remember {
         AppNavigator(initialScreen)
     }
