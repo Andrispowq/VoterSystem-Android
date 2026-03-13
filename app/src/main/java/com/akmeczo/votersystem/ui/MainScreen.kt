@@ -136,6 +136,13 @@ fun VotingDetailScreen(
             text = "Vote",
             onClick = { navigator.navigateTo(AppScreen.VotingHistory) }
         )
+        Spacer(modifier = Modifier.height(UiTokens.sectionGap))
+        RoundedActionButton(
+            text = "Back",
+            onClick = {
+                navigator.navigateTo(AppScreen.VotingList)
+            }
+        )
     }
 }
 

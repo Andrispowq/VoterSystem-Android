@@ -26,7 +26,6 @@ fun AuthLandingScreen(
     navigator: AppNavigator = AppNavigator(AppScreen.AuthLanding)
 ) {
     AuthScreenLayout {
-        Spacer(modifier = Modifier.height(UiTokens.screenVerticalPadding))
         AppTitleText()
         Spacer(modifier = Modifier.height(UiTokens.heroGap))
         RoundedActionButton(
@@ -62,7 +61,6 @@ fun LoginScreen(
     val isValidEmail = EMAIL_ADDRESS.matcher(email).matches()
 
     AuthScreenLayout {
-        Spacer(modifier = Modifier.height(UiTokens.screenVerticalPadding))
         AppTitleText()
         Spacer(modifier = Modifier.height(UiTokens.heroGap))
         RoundedTextField(
@@ -107,7 +105,6 @@ fun RegisterScreen(
     var passwordAgain by remember { mutableStateOf("") }
 
     AuthScreenLayout {
-        Spacer(modifier = Modifier.height(UiTokens.screenVerticalPadding))
         AppTitleText()
         Spacer(modifier = Modifier.height(UiTokens.titleToFormGap))
         RoundedTextField(
@@ -157,7 +154,7 @@ private fun AuthScreenLayout(content: @Composable ColumnScope.() -> Unit) {
                 vertical = UiTokens.screenVerticalPadding
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top,
+        verticalArrangement = Arrangement.Center,
         content = content
     )
 }
