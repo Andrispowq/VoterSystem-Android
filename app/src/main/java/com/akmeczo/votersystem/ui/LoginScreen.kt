@@ -1,5 +1,6 @@
-package com.akmeczo.votersystem
+package com.akmeczo.votersystem.ui
 
+import android.util.Patterns.EMAIL_ADDRESS
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -21,10 +22,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
-import com.akmeczo.votersystem.server.RequestType
+import com.akmeczo.votersystem.server.Api
 import com.akmeczo.votersystem.server.Server
 import com.akmeczo.votersystem.server.requests.UserLoginRequest
-import com.akmeczo.votersystem.server.responses.TokensDto
 import kotlinx.coroutines.launch
 
 @PreviewScreenSizes
@@ -32,7 +32,7 @@ import kotlinx.coroutines.launch
 fun LoginScreen(server: Server = Server("", "")) {
     var email by remember { mutableStateOf("example@gmail.com") }
     var password by remember { mutableStateOf("test_Str0ng_password") }
-    val isValidEmail = android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    val isValidEmail = EMAIL_ADDRESS.matcher(email).matches()
     val scope = rememberCoroutineScope()
 
     Column {
@@ -79,7 +79,7 @@ fun LoginScreen(server: Server = Server("", "")) {
             val request = UserLoginRequest(email, password)
 
             scope.launch {
-                val response: TokensDto? = server.makeRequest("users/login", RequestType.POST, request)
+                val response = Api.Users.login(server, request)
                 println("Got $response")
             }
         }) {

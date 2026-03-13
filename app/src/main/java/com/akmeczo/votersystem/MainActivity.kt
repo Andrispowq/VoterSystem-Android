@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.akmeczo.votersystem.server.Server
+import com.akmeczo.votersystem.ui.LoginScreen
 
 class MainActivity : ComponentActivity() {
     private val server: Server = Server("andris.picidolgok.hu", "api/v1")
