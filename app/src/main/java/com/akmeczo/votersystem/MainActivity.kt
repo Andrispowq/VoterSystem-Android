@@ -10,14 +10,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
-import com.akmeczo.votersystem.ui.AppScreen
-import com.akmeczo.votersystem.ui.AuthLandingScreen
-import com.akmeczo.votersystem.ui.LoginScreen
-import com.akmeczo.votersystem.ui.RegisterScreen
-import com.akmeczo.votersystem.ui.VotingDetailScreen
-import com.akmeczo.votersystem.ui.VotingHistoryScreen
-import com.akmeczo.votersystem.ui.VotingListScreen
-import com.akmeczo.votersystem.ui.rememberAppNavigator
+import com.akmeczo.votersystem.ui.navigation.AppScreen
+import com.akmeczo.votersystem.ui.auth.AuthLandingScreen
+import com.akmeczo.votersystem.ui.auth.LoginScreen
+import com.akmeczo.votersystem.ui.auth.RegisterScreen
+import com.akmeczo.votersystem.ui.main.VotingDetailScreen
+import com.akmeczo.votersystem.ui.main.VotingHistoryScreen
+import com.akmeczo.votersystem.ui.main.VotingListScreen
+import com.akmeczo.votersystem.ui.navigation.rememberAppNavigator
 import com.akmeczo.votersystem.server.Server
 
 class MainActivity : ComponentActivity() {
