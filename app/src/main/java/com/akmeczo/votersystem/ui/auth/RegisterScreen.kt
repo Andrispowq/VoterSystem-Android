@@ -59,7 +59,10 @@ fun RegisterScreen(
             text = "Register",
             onClick = {
                 if (!email.isNotBlank() || !password.isNotBlank() || password != passwordAgain) {
-                    //TODO: show an error screen
+                    navigator.showError(
+                        title = "Invalid Registration",
+                        description = "Fill every field and make sure the two passwords match."
+                    )
                     return@RoundedActionButton
                 }
 
@@ -67,10 +70,13 @@ fun RegisterScreen(
                     name = email, password = password)
 
                 scope.launch {
-                    when (Api.Users.register(server, request)) {
+                    when (val response = Api.Users.register(server, request)) {
                         is ApiResult.Success -> navigator.navigateTo(AppScreen.LoginForm)
                         is ApiResult.Failure -> {
-                            // TODO: show error using code/content from ApiResult.Failure
+                            navigator.showError(
+                                title = "Registration Failed",
+                                description = "The server returned an error while creating the account. (Error code: ${response.code}, details: ${response.content})"
+                            )
                         }
                     }
                 }

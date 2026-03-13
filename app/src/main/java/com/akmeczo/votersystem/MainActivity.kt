@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.akmeczo.votersystem.ui.navigation.AppScreen
+import com.akmeczo.votersystem.ui.ErrorPopup
 import com.akmeczo.votersystem.ui.auth.AuthLandingScreen
 import com.akmeczo.votersystem.ui.auth.LoginScreen
 import com.akmeczo.votersystem.ui.auth.RegisterScreen
@@ -52,6 +53,14 @@ fun VoterSystemApp(server: Server = Server("", "")) {
                 navigator = navigator
             )
             AppScreen.VotingHistory -> VotingHistoryScreen(server = server, navigator = navigator)
+        }
+
+        navigator.errorPopup?.let { error ->
+            ErrorPopup(
+                title = error.title,
+                description = error.description,
+                onDismiss = navigator::dismissError
+            )
         }
     }
 }

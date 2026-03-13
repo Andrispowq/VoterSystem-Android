@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -271,3 +272,44 @@ private fun pillFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedPlaceholderColor = appMutedText,
     unfocusedPlaceholderColor = appMutedText
 )
+
+@Composable
+fun ErrorPopup(
+    title: String,
+    description: String,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = appSurface,
+        titleContentColor = appText,
+        textContentColor = appText,
+        title = {
+            Text(
+                text = title,
+                style = TextStyle(
+                    fontFamily = FontFamily.Serif,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 22.sp,
+                    color = appText
+                )
+            )
+        },
+        text = {
+            Text(
+                text = description,
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    color = appText
+                )
+            )
+        },
+        confirmButton = {
+            RoundedActionButton(
+                text = "OK",
+                onClick = onDismiss,
+                width = 96.dp
+            )
+        }
+    )
+}
