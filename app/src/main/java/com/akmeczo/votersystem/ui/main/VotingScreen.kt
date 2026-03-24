@@ -11,8 +11,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.akmeczo.votersystem.server.Api
@@ -26,7 +28,6 @@ import com.akmeczo.votersystem.ui.BottomActionButtons
 import com.akmeczo.votersystem.ui.ScreenTitleText
 import com.akmeczo.votersystem.ui.UiTokens
 import com.akmeczo.votersystem.ui.appBackground
-import kotlinx.coroutines.launch
 
 @PreviewScreenSizes
 @Composable
@@ -34,22 +35,19 @@ fun VotingListScreen(
     server: Server = Server("", ""),
     navigator: AppNavigator = AppNavigator(AppScreen.VotingList)
 ) {
-    var votings = remember { listOf<VotingDto>() }
-    val scope = rememberCoroutineScope()
+    var votings by remember { mutableStateOf<List<VotingDto>>(emptyList()) }
 
-    LaunchedEffect(true) {
-        scope.launch {
-            when (val result = Api.Votings.getVotable(server)) {
-                is ApiResult.Success -> {
-                    votings = result.value
-                    println("Loaded stuff for votings: ${result.value}")
-                }
-                is ApiResult.Failure -> {
-                    navigator.showError(
-                        title = "Failed to load",
-                        description = "Failed to load votings. Please try again later."
-                    )
-                }
+    LaunchedEffect(Unit) {
+        when (val result = Api.Votings.getVotable(server)) {
+            is ApiResult.Success -> {
+                votings = result.value
+                println("Loaded stuff for votings: ${result.value}")
+            }
+            is ApiResult.Failure -> {
+                navigator.showError(
+                    title = "Failed to load",
+                    description = "Failed to load votings. Please try again later."
+                )
             }
         }
     }
