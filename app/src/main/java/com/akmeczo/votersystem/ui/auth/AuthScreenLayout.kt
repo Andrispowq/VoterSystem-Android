@@ -12,7 +12,7 @@ import com.akmeczo.votersystem.ui.UiTokens
 import com.akmeczo.votersystem.ui.appBackground
 
 @Composable
-public fun AuthScreenLayout(content: @Composable ColumnScope.() -> Unit) {
+fun AuthScreenLayout(content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()

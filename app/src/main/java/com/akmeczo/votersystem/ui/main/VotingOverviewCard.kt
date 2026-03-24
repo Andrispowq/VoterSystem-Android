@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.akmeczo.votersystem.server.responses.VotingDto
 import com.akmeczo.votersystem.ui.AppCard
 import com.akmeczo.votersystem.ui.BodyText
 import com.akmeczo.votersystem.ui.CardDivider
@@ -19,19 +20,18 @@ import com.akmeczo.votersystem.ui.MetaText
 import com.akmeczo.votersystem.ui.SectionLabelText
 import com.akmeczo.votersystem.ui.UiTokens
 import com.akmeczo.votersystem.ui.VerticalSectionDivider
-import com.akmeczo.votersystem.ui.VotingCardModel
 
 @Composable
-public fun VotingOverviewCard(
-    voting: VotingCardModel,
+fun VotingOverviewCard(
+    voting: VotingDto,
     resultsContent: @Composable () -> Unit,
     modifier: Modifier = Modifier
 ) {
     AppCard(modifier = modifier) {
-        CardTitleText(voting.title)
+        CardTitleText(voting.name)
         Spacer(modifier = Modifier.height(UiTokens.cardInnerGap))
-        MetaText("Started: ${voting.startDate}")
-        MetaText("Ends: ${voting.endDate}")
+        MetaText("Started: ${voting.startsAt}")
+        MetaText("Ends: ${voting.endsAt}")
         CardDivider()
         Spacer(modifier = Modifier.height(10.dp))
         Row(
@@ -41,8 +41,8 @@ public fun VotingOverviewCard(
                 modifier = Modifier.weight(1f)
             ) {
                 SectionLabelText("Choices:")
-                voting.choices.forEach { choice ->
-                    BodyText(text = "- ${choice.text}")
+                voting.voteChoices.forEach { choice ->
+                    BodyText(text = "- ${choice.name}")
                 }
             }
             VerticalSectionDivider()
