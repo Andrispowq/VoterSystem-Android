@@ -69,7 +69,10 @@ fun LoginScreen(
                     when (val response = Api.Users.login(server, request)) {
                         is ApiResult.Success -> {
                             when (response.value) {
-                                is LoginResultDto.Tokens -> navigator.navigateTo(AppScreen.VotingList)
+                                is LoginResultDto.Tokens -> {
+                                    server.saveTokens(response.value.tokens)
+                                    navigator.navigateTo(AppScreen.VotingList)
+                                }
                                 is LoginResultDto.TwoFactorChallenge -> {
                                     println("Returned two factor challenge: ${response.value}")
                                 }

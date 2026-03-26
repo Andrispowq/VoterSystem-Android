@@ -14,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
@@ -28,6 +29,7 @@ import com.akmeczo.votersystem.ui.BottomActionButtons
 import com.akmeczo.votersystem.ui.ScreenTitleText
 import com.akmeczo.votersystem.ui.UiTokens
 import com.akmeczo.votersystem.ui.appBackground
+import kotlinx.coroutines.launch
 
 @PreviewScreenSizes
 @Composable
@@ -36,13 +38,11 @@ fun VotingListScreen(
     navigator: AppNavigator = AppNavigator(AppScreen.VotingList)
 ) {
     var votings by remember { mutableStateOf<List<VotingDto>>(emptyList()) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         when (val result = Api.Votings.getVotable(server)) {
-            is ApiResult.Success -> {
-                votings = result.value
-                println("Loaded stuff for votings: ${result.value}")
-            }
+            is ApiResult.Success -> votings = result.value
             is ApiResult.Failure -> {
                 navigator.showError(
                     title = "Failed to load",
@@ -85,7 +85,13 @@ fun VotingListScreen(
             leftText = "History",
             rightText = "Logout",
             onLeftClick = { navigator.navigateTo(AppScreen.VotingHistory) },
-            onRightClick = { navigator.navigateTo(AppScreen.AuthLanding) }
+            onRightClick = {
+                scope.launch {
+                    Api.Users.logout(server)
+                    server.clearSession()
+                    navigator.navigateTo(AppScreen.AuthLanding)
+                }
+            }
         )
     }
 }

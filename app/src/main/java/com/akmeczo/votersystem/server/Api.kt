@@ -18,12 +18,6 @@ import com.akmeczo.votersystem.server.responses.VoteResultDto
 import com.akmeczo.votersystem.server.responses.VotingDto
 import com.akmeczo.votersystem.server.responses.VotingParticipationDto
 import com.akmeczo.votersystem.server.responses.VotingResultsDto
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.IOException
 import java.time.Instant
 import java.util.UUID
 
@@ -199,32 +193,27 @@ object Api {
         requestType: RequestType,
         body: String?
     ): ApiResult<String> {
-        val completeUrl = "${queryUrl}/$path"
         if (requestType == RequestType.GET && body != null) {
             return ApiResult.Failure(-1, "GET requests cannot have a body")
         }
 
-        val requestBody = body?.toRequestBody("application/json; charset=utf-8".toMediaType())
-            ?: if (requestType == RequestType.PATCH) byteArrayOf().toRequestBody(null, 0, 0) else null
-
-        val request = Request.Builder()
-            .url(completeUrl)
-            .method(requestType.value, requestBody)
-            .build()
-
-        return withContext(Dispatchers.IO) {
-            try {
-                client.newCall(request).execute().use { response ->
-                    val responseBody = response.body.string()
-                    if (response.isSuccessful) {
-                        ApiResult.Success(responseBody)
-                    } else {
-                        ApiResult.Failure(response.code, responseBody)
-                    }
-                }
-            } catch (exception: IOException) {
-                ApiResult.Failure(-1, exception.message ?: "Network error")
-            }
-        }
+        val usesSession = path !in publicPaths
+        return executeApiRequest(
+            path = path,
+            type = requestType,
+            body = body,
+            includeAuthToken = usesSession,
+            allowTokenRefresh = usesSession
+        )
     }
+
+    private val publicPaths = setOf(
+        "health",
+        "users/login",
+        "users/login/2fa",
+        "users/register",
+        "users/refresh-token",
+        "users/reset-password-request",
+        "users/reset-password"
+    )
 }

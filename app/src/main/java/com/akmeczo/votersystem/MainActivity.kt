@@ -22,10 +22,11 @@ import com.akmeczo.votersystem.ui.navigation.rememberAppNavigator
 import com.akmeczo.votersystem.server.Server
 
 class MainActivity : ComponentActivity() {
-    private val server: Server = Server("andris.picidolgok.hu", "api/v1")
+    private lateinit var server: Server
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        server = Server("andris.picidolgok.hu", "api/v1", applicationContext)
         enableEdgeToEdge()
         setContent {
             VoterSystemApp(server)

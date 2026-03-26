@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
@@ -29,6 +30,7 @@ import com.akmeczo.votersystem.ui.BottomActionButtons
 import com.akmeczo.votersystem.ui.ScreenTitleText
 import com.akmeczo.votersystem.ui.UiTokens
 import com.akmeczo.votersystem.ui.appBackground
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @PreviewScreenSizes
@@ -39,12 +41,11 @@ fun VotingHistoryScreen(
 ) {
     var history by remember { mutableStateOf<List<VotingDto>>(emptyList()) }
     val results = remember { mutableStateMapOf<Long, VotingResultsDto>() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         when (val result = Api.Votings.getVoted(server)) {
             is ApiResult.Success -> {
-                println("Loaded stuff for history: ${result.value}")
-
                 history = result.value
 
                 for (item in history) {
@@ -89,7 +90,7 @@ fun VotingHistoryScreen(
                                     val name =
                                         voting.voteChoices.find { it.choiceId == result.choiceId }
                                     val count = result.voteCount
-                                    val percent = count.div(total.toFloat())
+                                    val percent = count.div(total.toFloat()) * 100
                                     val percentS = String.format(Locale.getDefault(), "%.2f", percent)
                                     BodyText("${name?.name ?: "unknown"}: ${result.voteCount} (${percentS}%)")
                                 }
@@ -104,7 +105,13 @@ fun VotingHistoryScreen(
             leftText = "Voting",
             rightText = "Logout",
             onLeftClick = { navigator.navigateTo(AppScreen.VotingList) },
-            onRightClick = { navigator.navigateTo(AppScreen.AuthLanding) }
+            onRightClick = {
+                scope.launch {
+                    Api.Users.logout(server)
+                    server.clearSession()
+                    navigator.navigateTo(AppScreen.AuthLanding)
+                }
+            }
         )
     }
 }
