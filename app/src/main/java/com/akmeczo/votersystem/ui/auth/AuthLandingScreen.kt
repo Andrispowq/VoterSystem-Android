@@ -48,12 +48,16 @@ fun AuthLandingScreen(
         Spacer(modifier = Modifier.height(28.dp))
         RoundedActionButton(
             text = "Log in with Google",
-            onClick = { navigator.navigateTo(AppScreen.VotingList) }
+            onClick = {
+                navigator.navigateTo(AppScreen.VotingList)
+            }
         )
         Spacer(modifier = Modifier.height(UiTokens.sectionGap))
         RoundedActionButton(
             text = "Log in with Neptun",
-            onClick = { navigator.navigateTo(AppScreen.VotingList) }
+            onClick = {
+                navigator.navigateTo(AppScreen.VotingList)
+            }
         )
     }
 }

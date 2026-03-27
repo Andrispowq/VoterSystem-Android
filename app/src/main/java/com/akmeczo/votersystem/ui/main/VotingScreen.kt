@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,6 +27,7 @@ import com.akmeczo.votersystem.ui.navigation.AppNavigator
 import com.akmeczo.votersystem.ui.navigation.AppScreen
 import com.akmeczo.votersystem.ui.BodyText
 import com.akmeczo.votersystem.ui.BottomActionButtons
+import com.akmeczo.votersystem.ui.CardTitleText
 import com.akmeczo.votersystem.ui.ScreenTitleText
 import com.akmeczo.votersystem.ui.UiTokens
 import com.akmeczo.votersystem.ui.appBackground
@@ -60,25 +62,32 @@ fun VotingListScreen(
     ) {
         ScreenTitleText(text = "Szavazz rám!")
         Spacer(modifier = Modifier.height(UiTokens.sectionGap))
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-        ) {
-            items(votings) { voting ->
-                VotingOverviewCard(
-                    voting = voting,
-                    resultsContent = {
-                        BodyText(
-                            text = "No results available before voting",
-                            centered = true
-                        )
-                    },
-                    modifier = Modifier.clickable {
-                        navigator.navigateTo(AppScreen.VotingDetail(voting.votingId))
-                    }
-                )
+        if (votings.any()) {
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                items(votings) { voting ->
+                    VotingOverviewCard(
+                        voting = voting,
+                        resultsContent = {
+                            BodyText(
+                                text = "No results available before voting",
+                                centered = true
+                            )
+                        },
+                        modifier = Modifier.clickable {
+                            navigator.navigateTo(AppScreen.VotingDetail(voting.votingId))
+                        }
+                    )
+                }
             }
+        } else {
+            Text("No votings found",
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth())
         }
         Spacer(modifier = Modifier.height(UiTokens.sectionGap))
         BottomActionButtons(
