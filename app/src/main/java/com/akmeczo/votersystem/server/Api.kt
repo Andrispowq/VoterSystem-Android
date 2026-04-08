@@ -156,7 +156,7 @@ object Api {
 
     object Votes {
         suspend fun castVote(server: Server, choiceId: Long): ApiResult<VoteResultDto> =
-            server.executeForBody("votes/cast-vote?choiceId=$choiceId", RequestType.POST, null)
+            server.executeForBody("votes/cast-vote?choiceId=$choiceId", RequestType.POST, "")
 
         suspend fun getParticipations(server: Server): ApiResult<List<VotingParticipationDto>> =
             server.executeForBody("votes", RequestType.GET, null)

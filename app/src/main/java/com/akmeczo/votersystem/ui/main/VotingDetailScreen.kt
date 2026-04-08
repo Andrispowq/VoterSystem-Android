@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +39,7 @@ import com.akmeczo.votersystem.ui.ScreenTitleText
 import com.akmeczo.votersystem.ui.UiTokens
 import com.akmeczo.votersystem.ui.VerticalSectionDivider
 import com.akmeczo.votersystem.ui.appBackground
+import kotlinx.coroutines.launch
 
 @PreviewScreenSizes
 @Composable
@@ -48,6 +50,7 @@ fun VotingDetailScreen(
 ) {
     var voting by remember(votingId) { mutableStateOf<VotingDto?>(null) }
     var selectedChoiceId by remember(votingId) { mutableLongStateOf(0) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         when (val result = Api.Votings.getById(server, votingId)) {
@@ -132,7 +135,29 @@ fun VotingDetailScreen(
         Spacer(modifier = Modifier.height(UiTokens.detailGap))
         RoundedActionButton(
             text = "Vote",
-            onClick = { navigator.navigateTo(AppScreen.VotingHistory) }
+            onClick = {
+                if (selectedChoiceId == 0L) {
+                    navigator.showError(
+                        title = "No choice selected",
+                        description = "You have not yet selected a choice to cast your vote to."
+                    )
+                    return@RoundedActionButton
+                }
+
+                scope.launch {
+                    when (val result = Api.Votes.castVote(server, selectedChoiceId)) {
+                        is ApiResult.Success -> {
+                            navigator.navigateTo(AppScreen.VotingHistory)
+                        }
+                        is ApiResult.Failure -> {
+                            navigator.showError(
+                                title = "Failed to cast vote",
+                                description = "Error code: ${result.code}, details: ${result.content}"
+                            )
+                        }
+                    }
+                }
+            }
         )
         Spacer(modifier = Modifier.height(UiTokens.sectionGap))
         RoundedActionButton(
