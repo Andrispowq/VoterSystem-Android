@@ -77,6 +77,7 @@ fun VotingListScreen(
                                 centered = true
                             )
                         },
+                        showResults = false,
                         modifier = Modifier.clickable {
                             navigator.navigateTo(AppScreen.VotingDetail(voting.votingId))
                         }

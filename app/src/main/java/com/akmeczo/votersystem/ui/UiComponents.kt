@@ -59,6 +59,7 @@ object UiTokens {
 
 private val appBackground = Color(0xFFF4ECEE)
 private val appSurface = Color(0xFFF1EAEC)
+private val appCardWhite = Color(0xFFFFFFFF)
 private val appButton = Color(0xFFFBF7F8)
 private val appBorder = Color(0xFFD8CACE)
 private val appText = Color(0xFF2F2527)
@@ -160,14 +161,16 @@ fun RoundedPasswordField(
 @Composable
 fun AppCard(
     modifier: Modifier = Modifier,
+    containerColor: Color = appSurface,
+    cornerRadius: Dp = 0.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = UiTokens.cardBottomPadding),
-        colors = CardDefaults.cardColors(containerColor = appSurface),
-        shape = RoundedCornerShape(0.dp)
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        shape = RoundedCornerShape(cornerRadius)
     ) {
         Column(
             modifier = Modifier.padding(UiTokens.sectionGap),
@@ -175,6 +178,9 @@ fun AppCard(
         )
     }
 }
+
+val AppCardWhite: Color
+    get() = appCardWhite
 
 @Composable
 fun BottomActionButtons(

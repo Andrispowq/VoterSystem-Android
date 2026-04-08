@@ -81,10 +81,11 @@ fun VotingHistoryScreen(
                     .fillMaxWidth()
             ) {
                 items(history) { voting ->
+                    val result = results[voting.votingId]
                     VotingOverviewCard(
                         voting = voting,
+                        showResults = result != null,
                         resultsContent = {
-                            val result = results[voting.votingId]
                             if (result != null) {
                                 val total = result.choiceResults.sumOf { it.voteCount }
 
