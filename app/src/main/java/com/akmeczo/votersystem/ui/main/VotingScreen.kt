@@ -23,14 +23,13 @@ import com.akmeczo.votersystem.server.Api
 import com.akmeczo.votersystem.server.ApiResult
 import com.akmeczo.votersystem.server.Server
 import com.akmeczo.votersystem.server.responses.VotingDto
-import com.akmeczo.votersystem.ui.navigation.AppNavigator
-import com.akmeczo.votersystem.ui.navigation.AppScreen
 import com.akmeczo.votersystem.ui.BodyText
 import com.akmeczo.votersystem.ui.BottomActionButtons
-import com.akmeczo.votersystem.ui.CardTitleText
 import com.akmeczo.votersystem.ui.ScreenTitleText
 import com.akmeczo.votersystem.ui.UiTokens
 import com.akmeczo.votersystem.ui.appBackground
+import com.akmeczo.votersystem.ui.navigation.AppNavigator
+import com.akmeczo.votersystem.ui.navigation.AppScreen
 import kotlinx.coroutines.launch
 
 @PreviewScreenSizes
