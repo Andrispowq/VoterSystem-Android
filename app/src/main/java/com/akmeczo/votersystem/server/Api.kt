@@ -28,6 +28,13 @@ object Api {
     }
 
     object Users {
+        fun externalLoginEndpoint(server: Server, provider: ExternalLoginProvider): String {
+            return "${server.queryUrl}/users/external-login/${provider.serverName}?frontend=mobile"
+        }
+
+        suspend fun requestSigninTokens(server: Server, key: UUID): ApiResult<TokensDto> =
+            server.executeForBody("users/request-signin-tokens?id=$key", RequestType.POST, null)
+
         suspend fun register(server: Server, request: UserRegisterRequest): ApiResult<UserDto> =
             server.executeForBody("users/register", RequestType.POST, ApiJson.encode(request))
 

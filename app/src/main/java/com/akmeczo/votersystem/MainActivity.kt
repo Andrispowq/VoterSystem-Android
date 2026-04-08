@@ -1,6 +1,8 @@
 package com.akmeczo.votersystem
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,14 +24,43 @@ import com.akmeczo.votersystem.ui.navigation.rememberAppNavigator
 import com.akmeczo.votersystem.server.Server
 
 class MainActivity : ComponentActivity() {
+    private val deepLinkScheme = "com.akmeczo.votersystem"
+    private val deepLinkHost = "signin-callback"
+    private val deepLinkTag = "AuthCallback"
+
     private lateinit var server: Server
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleDeepLink(intent)
         server = Server("andris.picidolgok.hu", "api/v1", applicationContext)
         enableEdgeToEdge()
         setContent {
             VoterSystemApp(server)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleDeepLink(intent)
+    }
+
+    private fun handleDeepLink(intent: Intent?) {
+        val uri = intent?.data ?: return
+
+        if (uri.scheme == deepLinkScheme && uri.host == deepLinkHost) {
+            val key = uri.getQueryParameter("key")
+            val message = uri.getQueryParameter("message")
+            val code = uri.getQueryParameter("code")
+
+            //TODO: implement login via signin-tokens endpoint
+
+        } else {
+            Log.w(
+                deepLinkTag,
+                "Ignored URI because it did not match expected callback: expected $deepLinkScheme://$deepLinkHost"
+            )
         }
     }
 }
