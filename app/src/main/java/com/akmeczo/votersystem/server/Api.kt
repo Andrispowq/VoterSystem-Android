@@ -33,7 +33,7 @@ object Api {
         }
 
         suspend fun requestSigninTokens(server: Server, key: UUID): ApiResult<TokensDto> =
-            server.executeForBody("users/request-signin-tokens?id=$key", RequestType.POST, null)
+            server.executeForBody("users/request-signin-tokens?id=$key", RequestType.POST, "")
 
         suspend fun register(server: Server, request: UserRegisterRequest): ApiResult<UserDto> =
             server.executeForBody("users/register", RequestType.POST, ApiJson.encode(request))
@@ -47,7 +47,8 @@ object Api {
                         body.isBlank() -> ApiResult.Failure(-2, "Empty response body")
                         "\"authToken\"" in body -> server.decodeBody(body) { ApiJson.decode<TokensDto>(body) }
                             .map { LoginResultDto.Tokens(it) }
-                        "\"challengeId\"" in body -> server.decodeBody(body) { ApiJson.decode<TwoFactorChallengeDto>(body) }
+                        "\"userId\"" in body && "\"message\"" in body ->
+                            server.decodeBody(body) { ApiJson.decode<TwoFactorChallengeDto>(body) }
                             .map { LoginResultDto.TwoFactorChallenge(it) }
                         else -> ApiResult.Failure(-2, body)
                     }

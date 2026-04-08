@@ -12,6 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.lifecycle.lifecycleScope
+import com.akmeczo.votersystem.server.Api
+import com.akmeczo.votersystem.server.ApiResult
+import com.akmeczo.votersystem.server.Server
 import com.akmeczo.votersystem.ui.navigation.AppScreen
 import com.akmeczo.votersystem.ui.ErrorPopup
 import com.akmeczo.votersystem.ui.auth.AuthLandingScreen
@@ -20,8 +24,9 @@ import com.akmeczo.votersystem.ui.auth.RegisterScreen
 import com.akmeczo.votersystem.ui.main.VotingDetailScreen
 import com.akmeczo.votersystem.ui.main.VotingHistoryScreen
 import com.akmeczo.votersystem.ui.main.VotingListScreen
-import com.akmeczo.votersystem.ui.navigation.rememberAppNavigator
-import com.akmeczo.votersystem.server.Server
+import com.akmeczo.votersystem.ui.navigation.AppNavigator
+import kotlinx.coroutines.launch
+import java.util.UUID
 
 class MainActivity : ComponentActivity() {
     private val deepLinkScheme = "com.akmeczo.votersystem"
@@ -29,15 +34,16 @@ class MainActivity : ComponentActivity() {
     private val deepLinkTag = "AuthCallback"
 
     private lateinit var server: Server
+    private val navigator = AppNavigator(AppScreen.AuthLanding)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        handleDeepLink(intent)
         server = Server("andris.picidolgok.hu", "api/v1", applicationContext)
         enableEdgeToEdge()
         setContent {
-            VoterSystemApp(server)
+            VoterSystemApp(server = server, navigator = navigator)
         }
+        handleDeepLink(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -48,13 +54,51 @@ class MainActivity : ComponentActivity() {
 
     private fun handleDeepLink(intent: Intent?) {
         val uri = intent?.data ?: return
+        setIntent(Intent(intent).apply { data = null })
+        Log.d(deepLinkTag, "Received URI = $uri")
 
         if (uri.scheme == deepLinkScheme && uri.host == deepLinkHost) {
             val key = uri.getQueryParameter("key")
             val message = uri.getQueryParameter("message")
             val code = uri.getQueryParameter("code")
+            val error = uri.getQueryParameter("error")
 
-            //TODO: implement login via signin-tokens endpoint
+            Log.d(
+                deepLinkTag,
+                "Matched sign-in callback: code=$code error=$error key=$key message=$message"
+            )
+
+            if (!error.isNullOrBlank()) {
+                navigator.showError(
+                    title = "External sign-in failed",
+                    description = message ?: error
+                )
+                return
+            }
+
+            val signinKey = runCatching { key?.let(UUID::fromString) }.getOrNull()
+            if (signinKey == null) {
+                navigator.showError(
+                    title = "External sign-in failed",
+                    description = "The callback did not include a valid sign-in key."
+                )
+                return
+            }
+
+            lifecycleScope.launch {
+                when (val response = Api.Users.requestSigninTokens(server, signinKey)) {
+                    is ApiResult.Success -> {
+                        server.saveTokens(response.value)
+                        navigator.navigateTo(AppScreen.VotingList)
+                    }
+                    is ApiResult.Failure -> {
+                        navigator.showError(
+                            title = "External sign-in failed",
+                            description = "The server could not complete the sign-in. (Error code: ${response.code}, details: ${response.content})"
+                        )
+                    }
+                }
+            }
 
         } else {
             Log.w(
@@ -67,9 +111,10 @@ class MainActivity : ComponentActivity() {
 
 @PreviewScreenSizes
 @Composable
-fun VoterSystemApp(server: Server = Server("", "")) {
-    val navigator = rememberAppNavigator()
-
+fun VoterSystemApp(
+    server: Server = Server("", ""),
+    navigator: AppNavigator = AppNavigator(AppScreen.AuthLanding)
+) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center

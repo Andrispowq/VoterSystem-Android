@@ -1,7 +1,9 @@
 package com.akmeczo.votersystem.ui.auth
 
 import android.util.Patterns.EMAIL_ADDRESS
+import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -11,12 +13,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.compose.ui.unit.dp
 import com.akmeczo.votersystem.server.Api
 import com.akmeczo.votersystem.server.ApiResult
 import com.akmeczo.votersystem.server.Server
+import com.akmeczo.votersystem.server.requests.TwoFactorVerificationRequest
 import com.akmeczo.votersystem.server.requests.UserLoginRequest
 import com.akmeczo.votersystem.server.responses.LoginResultDto
+import com.akmeczo.votersystem.server.responses.TokensDto
+import com.akmeczo.votersystem.server.responses.TwoFactorChallengeDto
 import com.akmeczo.votersystem.ui.AppTitleText
+import com.akmeczo.votersystem.ui.BodyText
 import com.akmeczo.votersystem.ui.RoundedActionButton
 import com.akmeczo.votersystem.ui.RoundedPasswordField
 import com.akmeczo.votersystem.ui.RoundedTextField
@@ -33,8 +40,15 @@ fun LoginScreen(
 ) {
     var email by remember { mutableStateOf("example@gmail.com") }
     var password by remember { mutableStateOf("test_Str0ng_password") }
+    var twoFactorChallenge by remember { mutableStateOf<TwoFactorChallengeDto?>(null) }
+    var twoFactorCode by remember { mutableStateOf("") }
     val isValidEmail = EMAIL_ADDRESS.matcher(email).matches()
     val scope = rememberCoroutineScope()
+
+    fun completeLogin(tokens: TokensDto) {
+        server.saveTokens(tokens)
+        navigator.navigateTo(AppScreen.VotingList)
+    }
 
     AuthScreenLayout {
         AppTitleText()
@@ -69,12 +83,10 @@ fun LoginScreen(
                     when (val response = Api.Users.login(server, request)) {
                         is ApiResult.Success -> {
                             when (response.value) {
-                                is LoginResultDto.Tokens -> {
-                                    server.saveTokens(response.value.tokens)
-                                    navigator.navigateTo(AppScreen.VotingList)
-                                }
+                                is LoginResultDto.Tokens -> completeLogin(response.value.tokens)
                                 is LoginResultDto.TwoFactorChallenge -> {
-                                    println("Returned two factor challenge: ${response.value}")
+                                    twoFactorChallenge = response.value.challenge
+                                    twoFactorCode = ""
                                 }
                             }
                         }
@@ -96,4 +108,88 @@ fun LoginScreen(
             }
         )
     }
+
+    twoFactorChallenge?.let { challenge ->
+        TwoFactorPopup(
+            message = challenge.message,
+            code = twoFactorCode,
+            onCodeChange = { twoFactorCode = it },
+            onDismiss = {
+                twoFactorChallenge = null
+                twoFactorCode = ""
+            },
+            onConfirm = {
+                if (twoFactorCode.isBlank()) {
+                    navigator.showError(
+                        title = "Invalid two-factor code",
+                        description = "Enter the verification code to continue."
+                    )
+                    return@TwoFactorPopup
+                }
+
+                scope.launch {
+                    when (
+                        val response = Api.Users.loginTwoFactor(
+                            server,
+                            TwoFactorVerificationRequest(
+                                userId = challenge.userId,
+                                code = twoFactorCode
+                            )
+                        )
+                    ) {
+                        is ApiResult.Success -> {
+                            twoFactorChallenge = null
+                            twoFactorCode = ""
+                            completeLogin(response.value)
+                        }
+                        is ApiResult.Failure -> {
+                            navigator.showError(
+                                title = "Two-factor login failed",
+                                description = "The server rejected the verification code. (Error code: ${response.code}, details: ${response.content})"
+                            )
+                        }
+                    }
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun TwoFactorPopup(
+    message: String,
+    code: String,
+    onCodeChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { AppTitleText() },
+        text = {
+            Column {
+                BodyText(text = message)
+                Spacer(modifier = Modifier.height(UiTokens.sectionGap))
+                RoundedTextField(
+                    value = code,
+                    onValueChange = onCodeChange,
+                    placeholder = "Verification code"
+                )
+            }
+        },
+        confirmButton = {
+            RoundedActionButton(
+                text = "Verify",
+                onClick = onConfirm,
+                width = 96.dp
+            )
+        },
+        dismissButton = {
+            RoundedActionButton(
+                text = "Cancel",
+                onClick = onDismiss,
+                width = 96.dp
+            )
+        }
+    )
 }
