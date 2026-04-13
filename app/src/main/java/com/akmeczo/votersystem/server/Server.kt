@@ -26,7 +26,6 @@ enum class ResponseType {
 enum class RequestType(val value: String) {
     GET("GET"),
     POST("POST"),
-    PUT("PUT"),
     PATCH("PATCH"),
     DELETE("DELETE")
 }
@@ -38,86 +37,11 @@ class Server(domain: String, apiEndpoint: String, context: Context? = null) {
     private val sessionStore: SessionStore? = context?.let(::SessionStore)
     private val refreshMutex = Mutex()
     @Volatile
-    private var authToken: String? = sessionStore?.getTokens()?.authToken
+    var authToken: String? = sessionStore?.getTokens()?.authToken
+        private set
     val client = OkHttpClient.Builder()
         .cookieJar(cookieJar)
         .build()
-
-    val gson = Gson()
-
-    suspend fun checkServerHealth(): Boolean {
-        val result = request("health", RequestType.GET, null)
-        return when (result.first) {
-            ResponseType.Success -> true
-            else -> false
-        }
-    }
-
-    suspend inline fun tryMakeRequest(urlString: String, type: RequestType, body: String?): Boolean {
-        val result = request(urlString, type, body)
-        return when(result.first) {
-            ResponseType.Success -> { true }
-            ResponseType.InvalidToken -> { false }
-            ResponseType.InsufficientPermissions -> { false }
-            ResponseType.NetworkLost -> { false }
-            ResponseType.NotFound -> { false }
-            ResponseType.Other -> { false }
-        }
-    }
-
-    suspend inline fun <reified Type> makeRequest(urlString: String, type: RequestType, body: String?, invokesLogin: Boolean = true): Type? {
-        val result = request(urlString, type, body)
-        return when(result.first) {
-            ResponseType.Success -> {
-                if(Type::class.java != String::class.java) {
-                    gson.fromJson(result.second, Type::class.java)
-                } else {
-                    result.second as Type
-                }
-            }
-            ResponseType.InvalidToken -> { null }
-            ResponseType.InsufficientPermissions -> { null }
-            ResponseType.NetworkLost -> { null }
-            ResponseType.NotFound -> { null }
-            ResponseType.Other -> { null }
-        }
-    }
-
-    suspend inline fun <reified RespType, reified ReqType> makeRequest(urlString: String, type: RequestType, body: ReqType?, invokesLogin: Boolean = true): RespType? {
-        val result = request(urlString, type, gson.toJson(body))
-        return when(result.first) {
-            ResponseType.Success -> {
-                if(RespType::class.java != String::class.java) {
-                    gson.fromJson(result.second, RespType::class.java)
-                } else {
-                    result.second as RespType
-                }
-            }
-            ResponseType.InvalidToken -> { null }
-            ResponseType.InsufficientPermissions -> { null }
-            ResponseType.NetworkLost -> { null }
-            ResponseType.NotFound -> { null }
-            ResponseType.Other -> { null }
-        }
-    }
-
-    suspend inline fun <reified Type> makeRequest(urlString: String, type: RequestType, body: MultipartBody): Type? {
-        val result = request(urlString, type, body)
-        return when(result.first) {
-            ResponseType.Success -> {
-                if(Type::class.java != String::class.java) {
-                    gson.fromJson(result.second, Type::class.java)
-                } else {
-                    result.second as Type
-                }
-            }
-            ResponseType.InvalidToken -> {null }
-            ResponseType.InsufficientPermissions -> { null }
-            ResponseType.NetworkLost -> { null }
-            ResponseType.NotFound -> { null }
-            ResponseType.Other -> {  null }
-        }
-    }
 
     fun saveTokens(tokens: TokensDto) {
         authToken = tokens.authToken
@@ -221,82 +145,6 @@ class Server(domain: String, apiEndpoint: String, context: Context? = null) {
                 }
             } catch (exception: IOException) {
                 ApiResult.Failure(-1, exception.message ?: "Network error")
-            }
-        }
-    }
-
-    suspend fun request(urlString: String, type: RequestType, body: String?): Pair<ResponseType, String> {
-        val completeUrl = "$queryUrl/$urlString"
-        println("$type to $completeUrl with $body")
-        if (type == RequestType.GET && body != null) {
-            return Pair(ResponseType.Other, "")
-        }
-
-        val requestBody = body?.toRequestBody("application/json; charset=utf-8".toMediaType())
-            ?: if (type == RequestType.PATCH) byteArrayOf().toRequestBody(
-                null,
-                0,
-                0
-            ) else null
-
-        val requestBuilder = Request.Builder()
-            .url(completeUrl)
-            .method(type.value, requestBody)
-
-        return withContext(Dispatchers.IO) {
-            try {
-                val response = client.newCall(requestBuilder.build()).execute()
-                val responseBody = response.body.string()
-
-                val status = when {
-                    response.isSuccessful -> ResponseType.Success
-                    response.code == 401 -> ResponseType.InvalidToken
-                    response.code == 403 -> ResponseType.InsufficientPermissions
-                    response.code == 404 -> ResponseType.NotFound
-                    else -> ResponseType.Other
-                }
-
-                if(status != ResponseType.Success) {
-                    println("Response was ${Pair(status, responseBody)} (code: ${response.code}) for $urlString ($type) with $body")
-                }
-
-                Pair(status, responseBody)
-            } catch (e: IOException) {
-                println("Exception is ${e.message}")
-                Pair(ResponseType.NetworkLost, "")
-            }
-        }
-    }
-
-    suspend fun request(urlString: String, type: RequestType, body: MultipartBody): Pair<ResponseType, String> {
-        val completeUrl = "$queryUrl/$urlString"
-        println("$type request to $completeUrl")
-
-        val requestBuilder = Request.Builder()
-            .url(completeUrl)
-            .method(type.value, body)
-
-        return withContext(Dispatchers.IO) {
-            try {
-                val response = client.newCall(requestBuilder.build()).execute()
-                val responseBody = response.body.string()
-
-                val status = when {
-                    response.isSuccessful -> ResponseType.Success
-                    response.code == 401 -> ResponseType.InvalidToken
-                    response.code == 403 -> ResponseType.InsufficientPermissions
-                    response.code == 404 -> ResponseType.NotFound
-                    else -> ResponseType.Other
-                }
-
-                if(status != ResponseType.Success) {
-                    println("Response was ${Pair(status, responseBody)} (code: ${response.code}) for $urlString ($type) with $body")
-                }
-
-                Pair(status, responseBody)
-            } catch (e: IOException) {
-                println("Exception is ${e.message}")
-                Pair(ResponseType.NetworkLost, "")
             }
         }
     }

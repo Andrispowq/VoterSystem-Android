@@ -31,7 +31,6 @@ import com.akmeczo.votersystem.ui.BodyText
 import com.akmeczo.votersystem.ui.CardDivider
 import com.akmeczo.votersystem.ui.CardTitleText
 import com.akmeczo.votersystem.ui.MetaText
-import com.akmeczo.votersystem.ui.MockVotingData
 import com.akmeczo.votersystem.ui.RoundedActionButton
 import com.akmeczo.votersystem.ui.ScreenTitleText
 import com.akmeczo.votersystem.ui.SectionLabelText
@@ -44,7 +43,7 @@ import kotlinx.coroutines.launch
 @PreviewScreenSizes
 @Composable
 fun VotingDetailScreen(
-    votingId: Long = MockVotingData.availableVotings.first().id,
+    votingId: Long = 0,
     server: Server = Server("", ""),
     navigator: AppNavigator = AppNavigator(AppScreen.VotingDetail(votingId))
 ) {
@@ -93,8 +92,9 @@ fun VotingDetailScreen(
 
             CardTitleText(obj.name)
             Spacer(modifier = Modifier.height(UiTokens.cardInnerGap))
-            MetaText("Started: ${obj.startsAt}")
-            MetaText("Ends: ${obj.endsAt}")
+            MetaText("Started: ${formatVotingDateTime(obj.startsAt)}")
+            MetaText("Ends: ${formatVotingDateTime(obj.endsAt)}")
+            MetaText("Time left: ${formatTimeUntilVotingEnds(obj.endsAt)}")
             CardDivider()
             Spacer(modifier = Modifier.height(UiTokens.sectionLabelGap))
             SectionLabelText("Choices")

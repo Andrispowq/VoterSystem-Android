@@ -1,6 +1,5 @@
 package com.akmeczo.votersystem.ui.main
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
@@ -30,8 +29,9 @@ fun VotingOverviewCard(
     ) {
         CardTitleText(voting.name)
         Spacer(modifier = Modifier.height(UiTokens.cardInnerGap))
-        MetaText("Started: ${voting.startsAt}")
-        MetaText("Ends: ${voting.endsAt}")
+        MetaText("Started: ${formatVotingDateTime(voting.startsAt)}")
+        MetaText("Ends: ${formatVotingDateTime(voting.endsAt)}")
+        MetaText("Time left: ${formatTimeUntilVotingEnds(voting.endsAt)}")
         CardDivider()
         Spacer(modifier = Modifier.height(10.dp))
         SectionLabelText("Choices")

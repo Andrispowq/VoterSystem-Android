@@ -22,13 +22,13 @@ import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.akmeczo.votersystem.server.Api
 import com.akmeczo.votersystem.server.ApiResult
 import com.akmeczo.votersystem.server.Server
+import com.akmeczo.votersystem.server.realtime.SignalRClient
 import com.akmeczo.votersystem.server.responses.VotingDto
 import com.akmeczo.votersystem.server.responses.VotingResultsDto
 import com.akmeczo.votersystem.ui.navigation.AppNavigator
 import com.akmeczo.votersystem.ui.navigation.AppScreen
 import com.akmeczo.votersystem.ui.BodyText
 import com.akmeczo.votersystem.ui.BottomActionButtons
-import com.akmeczo.votersystem.ui.CardTitleText
 import com.akmeczo.votersystem.ui.ScreenTitleText
 import com.akmeczo.votersystem.ui.UiTokens
 import com.akmeczo.votersystem.ui.appBackground
@@ -44,8 +44,16 @@ fun VotingHistoryScreen(
     var history by remember { mutableStateOf<List<VotingDto>>(emptyList()) }
     val results = remember { mutableStateMapOf<Long, VotingResultsDto>() }
     val scope = rememberCoroutineScope()
+    val signalR = SignalRClient("https://andris.picidolgok.hu/Hubs/VotesHub", server)
 
     LaunchedEffect(Unit) {
+        signalR.postInit()
+        signalR.start()
+
+        signalR.registerResultCallback(SignalRClient.UPDATED_RESULTS_CALLBACK_NAME) {
+            results[it.votingId] = it.votingResults
+        }
+
         when (val result = Api.Votings.getVoted(server)) {
             is ApiResult.Success -> {
                 history = result.value
@@ -115,9 +123,13 @@ fun VotingHistoryScreen(
         BottomActionButtons(
             leftText = "Voting",
             rightText = "Logout",
-            onLeftClick = { navigator.navigateTo(AppScreen.VotingList) },
+            onLeftClick = {
+                deregister(signalR)
+                navigator.navigateTo(AppScreen.VotingList)
+            },
             onRightClick = {
                 scope.launch {
+                    deregister(signalR)
                     Api.Users.logout(server)
                     server.clearSession()
                     navigator.navigateTo(AppScreen.AuthLanding)
@@ -125,4 +137,9 @@ fun VotingHistoryScreen(
             }
         )
     }
+}
+
+fun deregister(signalR: SignalRClient) {
+    signalR.deregisterCallback(SignalRClient.UPDATED_RESULTS_CALLBACK_NAME)
+    signalR.stop()
 }
