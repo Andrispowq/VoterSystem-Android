@@ -1,27 +1,16 @@
 package com.akmeczo.votersystem.server
 
 import android.content.Context
-import com.google.gson.Gson
 import com.akmeczo.votersystem.server.responses.TokensDto
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
-
-enum class ResponseType {
-    Success,
-    NotFound,
-    InvalidToken,
-    InsufficientPermissions,
-    NetworkLost,
-    Other
-}
 
 enum class RequestType(val value: String) {
     GET("GET"),
