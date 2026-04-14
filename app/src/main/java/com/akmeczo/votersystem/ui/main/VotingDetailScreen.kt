@@ -82,7 +82,7 @@ fun VotingDetailScreen(
             .padding(horizontal = UiTokens.listHorizontalPadding, vertical = UiTokens.listVerticalPadding),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        ScreenTitleText(text = "Szavazz rĂˇm!")
+        ScreenTitleText(text = "Szavazz rám!")
         Spacer(modifier = Modifier.height(UiTokens.detailGap))
         AppCard(
             containerColor = AppCardWhite,
