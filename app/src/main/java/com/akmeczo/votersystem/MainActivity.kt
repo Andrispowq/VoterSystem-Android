@@ -16,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import com.akmeczo.votersystem.server.Api
 import com.akmeczo.votersystem.server.ApiResult
 import com.akmeczo.votersystem.server.Server
+import com.akmeczo.votersystem.server.responses.Role
 import com.akmeczo.votersystem.ui.navigation.AppScreen
 import com.akmeczo.votersystem.ui.ErrorPopup
 import com.akmeczo.votersystem.ui.auth.AuthLandingScreen
@@ -88,6 +89,17 @@ class MainActivity : ComponentActivity() {
             lifecycleScope.launch {
                 when (val response = Api.Users.requestSigninTokens(server, signinKey)) {
                     is ApiResult.Success -> {
+                        val user = Api.Users.getCurrent(server)
+                        Log.d("MainActivity", "User is $user")
+                        if (user is ApiResult.Success && user.value.role == Role.Admin) {
+                            navigator.navigateTo(AppScreen.AuthLanding)
+                            navigator.showError(
+                                title = "Invalid Login",
+                                description = "Your account is an Admin account, so you are not allowed to use the mobile version. Please use the Admin website instead."
+                            )
+                            return@launch
+                        }
+
                         server.saveTokens(response.value)
                         navigator.navigateTo(AppScreen.VotingList)
                     }

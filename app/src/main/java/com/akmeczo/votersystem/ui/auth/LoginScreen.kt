@@ -1,5 +1,6 @@
 package com.akmeczo.votersystem.ui.auth
 
+import android.util.Log
 import android.util.Patterns.EMAIL_ADDRESS
 import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +21,7 @@ import com.akmeczo.votersystem.server.Server
 import com.akmeczo.votersystem.server.requests.TwoFactorVerificationRequest
 import com.akmeczo.votersystem.server.requests.UserLoginRequest
 import com.akmeczo.votersystem.server.responses.LoginResultDto
+import com.akmeczo.votersystem.server.responses.Role
 import com.akmeczo.votersystem.server.responses.TokensDto
 import com.akmeczo.votersystem.server.responses.TwoFactorChallengeDto
 import com.akmeczo.votersystem.ui.AppTitleText
@@ -83,7 +85,19 @@ fun LoginScreen(
                     when (val response = Api.Users.login(server, request)) {
                         is ApiResult.Success -> {
                             when (response.value) {
-                                is LoginResultDto.Tokens -> completeLogin(response.value.tokens)
+                                is LoginResultDto.Tokens -> {
+                                    val user = Api.Users.getCurrent(server)
+                                    Log.d("LoginScreen", "User is $user")
+                                    if (user is ApiResult.Success && user.value.role == Role.Admin) {
+                                        navigator.showError(
+                                            title = "Invalid Login",
+                                            description = "Your account is an Admin account, so you are not allowed to use the mobile version. Please use the Admin website instead."
+                                        )
+                                        return@launch
+                                    }
+
+                                    completeLogin(response.value.tokens)
+                                }
                                 is LoginResultDto.TwoFactorChallenge -> {
                                     twoFactorChallenge = response.value.challenge
                                     twoFactorCode = ""
