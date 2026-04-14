@@ -1,6 +1,7 @@
 package com.akmeczo.votersystem.server
 
 import android.content.Context
+import com.akmeczo.votersystem.server.requests.RefreshTokenRequest
 import com.akmeczo.votersystem.server.responses.TokensDto
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -75,7 +76,9 @@ class Server(domain: String, apiEndpoint: String, context: Context? = null) {
             return true
         }
 
-        val refreshBody = ApiJson.encode(storedTokens.refreshToken)
+        val body = RefreshTokenRequest(storedTokens.refreshToken)
+
+        val refreshBody = ApiJson.encode(body)
         val refreshResult = executeRaw(
             path = "users/refresh-token",
             type = RequestType.POST,
