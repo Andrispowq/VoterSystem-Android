@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,7 +33,10 @@ import com.akmeczo.votersystem.ui.BottomActionButtons
 import com.akmeczo.votersystem.ui.ScreenTitleText
 import com.akmeczo.votersystem.ui.UiTokens
 import com.akmeczo.votersystem.ui.appBackground
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 @PreviewScreenSizes
@@ -42,34 +46,43 @@ fun VotingHistoryScreen(
     navigator: AppNavigator = AppNavigator(AppScreen.VotingHistory)
 ) {
     var history by remember { mutableStateOf<List<VotingDto>>(emptyList()) }
+    var liveResultsEnabledVotingIds by remember { mutableStateOf(setOf<Long>()) }
     val results = remember { mutableStateMapOf<Long, VotingResultsDto>() }
     val scope = rememberCoroutineScope()
-    val signalR = SignalRClient("https://andris.picidolgok.hu/Hubs/VotesHub", server)
+    val signalR = remember(server) { SignalRClient("https://andris.picidolgok.hu/Hubs/VotesHub", server) }
 
-    LaunchedEffect(Unit) {
-        signalR.postInit()
-        signalR.start()
-
+    LaunchedEffect(signalR) {
         signalR.registerResultCallback(SignalRClient.UPDATED_RESULTS_CALLBACK_NAME) {
-            results[it.votingId] = it.votingResults
+            scope.launch {
+                results[it.votingId] = it.votingResults
+            }
         }
 
-        when (val result = Api.Votings.getVoted(server)) {
-            is ApiResult.Success -> {
-                history = result.value
+        try {
+            when (val result = Api.Votings.getVoted(server)) {
+                is ApiResult.Success -> {
+                    history = result.value
 
-                for (item in history) {
-                    when (val result = Api.Votings.getResults(server, item.votingId)) {
-                        is ApiResult.Success -> results[item.votingId] = result.value
-                        else -> {}
+                    for (item in history) {
+                        when (val result = Api.Votings.getResults(server, item.votingId)) {
+                            is ApiResult.Success -> results[item.votingId] = result.value
+                            else -> {}
+                        }
                     }
                 }
+                is ApiResult.Failure -> {
+                    navigator.showError(
+                        title = "Failed to load",
+                        description = "Failed to load votings. Please try again later."
+                    )
+                }
             }
-            is ApiResult.Failure -> {
-                navigator.showError(
-                    title = "Failed to load",
-                    description = "Failed to load votings. Please try again later."
-                )
+
+            awaitCancellation()
+        } finally {
+            signalR.deregisterCallback(SignalRClient.UPDATED_RESULTS_CALLBACK_NAME)
+            withContext(NonCancellable) {
+                signalR.disconnect()
             }
         }
     }
@@ -88,26 +101,49 @@ fun VotingHistoryScreen(
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                items(history) { voting ->
+                items(items = history, key = { it.votingId }) { voting ->
                     val result = results[voting.votingId]
+                    val isLiveEnabled = voting.votingId in liveResultsEnabledVotingIds
                     VotingOverviewCard(
                         voting = voting,
                         showResults = result != null,
+                        headerAction = {
+                            FilterChip(
+                                selected = isLiveEnabled,
+                                onClick = {
+                                    scope.launch {
+                                        val toggleSucceeded = if (isLiveEnabled) {
+                                            signalR.unsubscribeFromVoting(voting.votingId)
+                                        } else {
+                                            signalR.subscribeToVoting(voting.votingId)
+                                        }
+
+                                        if (toggleSucceeded) {
+                                            val updatedVotingIds = if (isLiveEnabled) {
+                                                liveResultsEnabledVotingIds - voting.votingId
+                                            } else {
+                                                liveResultsEnabledVotingIds + voting.votingId
+                                            }
+                                            liveResultsEnabledVotingIds = updatedVotingIds
+                                            if (updatedVotingIds.isEmpty()) {
+                                                signalR.disconnect()
+                                            }
+                                        } else {
+                                            navigator.showError(
+                                                title = "Live results unavailable",
+                                                description = "Could not update the live results subscription right now. Please try again."
+                                            )
+                                        }
+                                    }
+                                },
+                                label = {
+                                    Text(if (isLiveEnabled) "Live on" else "Live off")
+                                }
+                            )
+                        },
                         resultsContent = {
                             if (result != null) {
-                                val total = result.choiceResults.sumOf { it.voteCount }
-
-                                Column {
-                                    result.choiceResults.forEach { result ->
-                                        val name =
-                                            voting.voteChoices.find { it.choiceId == result.choiceId }
-                                        val count = result.voteCount
-                                        val percent = count.div(total.toFloat()) * 100
-                                        val percentS =
-                                            String.format(Locale.getDefault(), "%.2f", percent)
-                                        BodyText("${name?.name ?: "unknown"}: ${result.voteCount} (${percentS}%)")
-                                    }
-                                }
+                                VotingResultsContent(voting = voting, results = result)
                             }
                         }
                     )
@@ -124,12 +160,16 @@ fun VotingHistoryScreen(
             leftText = "Voting",
             rightText = "Logout",
             onLeftClick = {
-                deregister(signalR)
-                navigator.navigateTo(AppScreen.VotingList)
+                scope.launch {
+                    signalR.disconnect()
+                    liveResultsEnabledVotingIds = emptySet()
+                    navigator.navigateTo(AppScreen.VotingList)
+                }
             },
             onRightClick = {
                 scope.launch {
-                    deregister(signalR)
+                    signalR.disconnect()
+                    liveResultsEnabledVotingIds = emptySet()
                     Api.Users.logout(server)
                     server.clearSession()
                     navigator.navigateTo(AppScreen.AuthLanding)
@@ -139,7 +179,16 @@ fun VotingHistoryScreen(
     }
 }
 
-fun deregister(signalR: SignalRClient) {
-    signalR.deregisterCallback(SignalRClient.UPDATED_RESULTS_CALLBACK_NAME)
-    signalR.stop()
+@Composable
+private fun VotingResultsContent(voting: VotingDto, results: VotingResultsDto) {
+    val totalVotes = results.choiceResults.sumOf { it.voteCount }
+
+    Column {
+        results.choiceResults.forEach { choiceResult ->
+            val choiceName = voting.voteChoices.find { it.choiceId == choiceResult.choiceId }?.name ?: "unknown"
+            val percent = if (totalVotes == 0L) 0f else choiceResult.voteCount / totalVotes.toFloat() * 100
+            val percentText = String.format(Locale.getDefault(), "%.2f", percent)
+            BodyText("$choiceName: ${choiceResult.voteCount} ($percentText%)")
+        }
+    }
 }
