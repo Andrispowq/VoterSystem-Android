@@ -1,0 +1,79 @@
+@startuml
+title VoterSystem Android - Architecture Overview
+left to right direction
+skinparam shadowing false
+skinparam componentStyle rectangle
+
+actor User
+actor "External Login Provider" as Provider
+component "MainActivity" as MainActivity
+component "VoterSystemApp" as App
+component "AppNavigator\n(screen + error state)" as Navigator
+component "Auth Screens\nAuthLandingScreen\nLoginScreen\nRegisterScreen" as AuthScreens
+component "Voting Screens\nVotingListScreen\nVotingDetailScreen\nVotingHistoryScreen" as VotingScreens
+component "ErrorPopup" as ErrorPopup
+component "Api" as Api
+component "Server\nOkHttp + token refresh" as Server
+component "SessionStore\nsecure local tokens" as SessionStore
+component "SignalRClient" as SignalR
+database "REST Backend" as Backend
+
+User --> MainActivity : launch app
+MainActivity --> App : setContent()
+App --> Navigator : reads current screen
+App --> AuthScreens : renders auth flow
+App --> VotingScreens : renders voting flow
+Navigator --> ErrorPopup : exposes error popup state
+
+AuthScreens --> Api : login / register / current user
+VotingScreens --> Api : list / detail / vote / history
+VotingScreens --> SignalR : live result updates
+Api --> Server : execute requests
+Server --> SessionStore : load/save/clear tokens
+Server --> Backend : HTTPS requests
+SignalR --> Backend : results hub
+
+AuthScreens --> Provider : browser-based external login
+Provider --> MainActivity : deep link callback
+MainActivity --> Api : request sign-in tokens
+MainActivity --> Navigator : open VotingList or show error
+
+note bottom of Server
+Owns auth state and retries once
+through refresh-token when a request gets 401.
+end note
+
+skinparam shadowing false
+
+Open --> AuthLanding
+
+AuthLanding --> VotingList : stored session is valid
+AuthLanding --> LoginForm : Login
+AuthLanding --> RegisterForm : Register
+AuthLanding --> ExternalBrowser : Google / Facebook / Neptun
+ExternalBrowser --> AuthCallback : deep link
+AuthCallback --> VotingList : tokens accepted
+AuthCallback --> AuthLanding : admin or failed login
+
+RegisterForm --> LoginForm : successful registration
+RegisterForm --> AuthLanding : Back
+
+LoginForm --> VotingList : login success
+LoginForm --> LoginForm : 2FA challenge / validation error
+LoginForm --> AuthLanding : Back
+
+VotingList --> VotingDetail : select voting
+VotingList --> VotingHistory : History
+VotingList --> AuthLanding : Logout
+
+VotingDetail --> VotingHistory : vote submitted
+VotingDetail --> VotingList : Back
+
+VotingHistory --> VotingList : Voting
+VotingHistory --> AuthLanding : Logout
+
+note right of VotingHistory
+Subscribes to SignalR for live result updates.
+end note
+
+@enduml
